@@ -1,22 +1,20 @@
 #!/bin/sh
 # Off-car test of the adb mod on the patch engine: each toggle sets its props,
 # the live mirror (sys.usb.config) and the adbd restart; restore gives the stock values back.
+# With the HMG-API mod SDK (the mod workflow sets HMGAPI_SDK):
+#   HMGAPI_SDK=<unpacked sdk> adb/test.sh
 set -e
-cd "$(dirname "$0")/../.."
-CP=$(mktemp -d); T=$(mktemp -d); trap 'rm -rf "$T" "$CP"' EXIT
-javac --release 8 -Xlint:-options -nowarn -d "$CP" core/runtime/java/hmgapi/engine/*.java 2>/dev/null
+M=$(cd "$(dirname "$0")" && pwd)
+T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 R=$T/root
-fail=0
-check() { if [ "$2" = "$3" ]; then echo "ok    $1"; else echo "FAIL  $1: wanted [$2], got [$3]"; fail=1; fi; }
-has() { case "$3" in *"$2"*) echo "ok    $1" ;; *) echo "FAIL  $1: wanted [$2] in [$3]"; fail=1 ;; esac; }
-eng() { set +e; out=$(HMGAPI_ROOT=$R HMGAPI_HOST=1 HMGAPI_TEST_ANY_CAR=1 java -cp "$CP" hmgapi.engine.Engine "$@" 2>&1); rc=$?; set -e; }
+. "${HMGAPI_SDK:?set HMGAPI_SDK to the unpacked mod SDK}/test/lib.sh"
 prop() { grep "^prop/$1=" $R/settings.txt | cut -d= -f2-; }
 check "NEMESIS package refuses adb.tcp (mod.json nemesis_conflicts)" "hmgapi@>=1.0,!adb.tcp" \
-    "$(HMGAPI_NEMESIS_CONFLICTS=/dev/null tools/nemesis-meta.py depends hmgapi.adb 'hmgapi@>=1.0' --mod mods/adb/mod.json)"
+    "$(HMGAPI_NEMESIS_CONFLICTS=/dev/null $HMGAPI_SDK/bin/nemesis-meta.py depends hmgapi.adb 'hmgapi@>=1.0' --mod $M/mod.json)"
 mkdir -p $R/data/hmgapi/mods $R/data/hmgapi/settings
 printf 'ro.board.platform=tcc803x\n' > $R/props.txt
 printf 'prop/persist.service.adb.tcp.enable=1\nprop/persist.sys.usb.config=adb\nprop/persist.adb.tcp.port=5555\n' > $R/settings.txt
-cp -r mods/adb $R/data/hmgapi/mods/; rm $R/data/hmgapi/mods/adb/test.sh
+install_mod "$M"
 
 eng apply; check "defaults apply" 0 $rc
 check "Engineering Mode switch off (no eth0 address)" 0 "$(prop persist.service.adb.tcp.enable)"
