@@ -1,0 +1,6 @@
+# Who reviews what. The main branch requires a code owner's review.
+# Everything else: one Open-HMG maintainer.
+*                   @Open-HMG/maintainers
+
+# CI and releases (the signing key): the maintainer.
+/.github/           @VysseCodes
