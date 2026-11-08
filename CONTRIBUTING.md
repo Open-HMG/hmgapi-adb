@@ -18,6 +18,9 @@ Problems with HMG-API itself (the app, the installer, the engine, hook points) g
   car); this mod uses it once a HMG-API release has it (HMG-API's `docs/mod-repos.md`,
   section 4).
 - Don't change `adb/mod.json`'s `"version"`: it's set when a release is made.
+- Versions and releases (finals, release candidates, betas, hotfixes) follow HMG-API's
+  [docs/releasing.md](https://github.com/Open-HMG/HMG-API/blob/main/docs/releasing.md),
+  with this mod's own numbers. A tag is `v<mod.json version>`, suffix included.
 - Who reviews what (`.github/CODEOWNERS`): VysseCodes reviews CI and releases
   (`.github/`); everything else needs one of the Open-HMG maintainers.
 
