@@ -1,5 +1,6 @@
 # A release of the adb mod from a version tag (v1.0.0): the tag must be adb/mod.json's
-# "version". Built with the HMG-API mod SDK hmgapi-sdk.json pins, tested, signed with the
+# "version", suffix included (pre-releases -alpha.N, -beta.N, -rc.N: HMG-API's
+# docs/releasing.md). Built with the HMG-API mod SDK hmgapi-sdk.json pins, tested, signed with the
 # author key, then attached to a *draft* GitHub release. Publishing it stays a person's call.
 # The run prints the tools/catalog.py add command for the HMG-API catalogue pull request.
 #
@@ -33,6 +34,7 @@ jobs:
         run: |
           v=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$MOD/mod.json")
           test "v$v" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME, but $MOD/mod.json's version is $v"; exit 1; }
+          echo "$v" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)\.(0|[1-9][0-9]*))?$' || { echo "$v: x.y.z or x.y.z-alpha.N, -beta.N, -rc.N (HMG-API's docs/releasing.md)"; exit 1; }
           echo "VERSION=$v" >> "$GITHUB_ENV"
 
       - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
@@ -57,7 +59,7 @@ jobs:
           out = open(os.environ["GITHUB_OUTPUT"], "a")
           if set(p) == {"ref"} and re.fullmatch(r"[0-9a-f]{40}", p["ref"]):
               out.write("form=ref\nref=%s\n" % p["ref"])
-          elif set(p) == {"version", "sha256"} and re.fullmatch(r"\d+\.\d+\.\d+", p["version"]) and re.fullmatch(r"[0-9a-f]{64}", p["sha256"]):
+          elif set(p) == {"version", "sha256"} and re.fullmatch(r"\d+\.\d+\.\d+(-(alpha|beta|rc)\.\d+)?", p["version"]) and re.fullmatch(r"[0-9a-f]{64}", p["sha256"]):
               out.write("form=release\nversion=%s\nsha256=%s\n" % (p["version"], p["sha256"]))
           else:
               sys.exit('hmgapi-sdk.json: wanted {"ref": "<40 hex>"} or {"version": "x.y.z", "sha256": "<64 hex>"}')
@@ -140,12 +142,20 @@ jobs:
             echo "Built with the HMG-API mod SDK $(cat "$HMGAPI_SDK/VERSION") ($(cat "$HMGAPI_SDK/BUILD"))."
             echo
             echo '```'; cat out/assets/SHA256SUMS; echo '```'; } > "$notes"
-          gh release create "$GITHUB_REF_NAME" --draft --title "$name $VERSION" --notes-file "$notes" out/assets/*
+          pre=""; case "$GITHUB_REF_NAME" in *-*) pre="--prerelease --latest=false" ;; esac   # a pre-release is never "Latest"
+          gh release create "$GITHUB_REF_NAME" --draft $pre --title "$name $VERSION" --notes-file "$notes" out/assets/*
 
       - name: The catalogue command
         run: |
           url="https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/$MOD-$VERSION.zip"
           cmd="tools/catalog.py add $MOD-$VERSION.zip --download $url --repo https://github.com/$GITHUB_REPOSITORY"
+          case "$VERSION" in *-*)   # the catalogue lists finals only; a HMG-API pre-release can pin this one
+            cmd="$MOD $VERSION $url $(sed -n "s/  $MOD-$VERSION.zip\$//p" out/assets/SHA256SUMS)"
+            echo "A pre-release isn't for the catalogue (finals only). For a HMG-API pre-release that bundles it, the tools/release-mods.txt line:"
+            echo "  $cmd"
+            { echo "### Pre-release"; echo; echo "Not for the catalogue (finals only). A HMG-API pre-release that bundles it pins it in tools/release-mods.txt:"; echo; echo '```'; echo "$cmd"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            exit 0 ;;
+          esac
           echo "Once the release is published, a maintainer opens the HMG-API pull request (in HMG-API, with the zip downloaded there):"
           echo "  $cmd"
           { echo "### Catalogue"; echo; echo "After publishing, in HMG-API (zip downloaded from the release):"; echo; echo '```'; echo "$cmd"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
