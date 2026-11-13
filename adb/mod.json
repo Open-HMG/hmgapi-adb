@@ -13,5 +13,17 @@
     { "id": "no_usb", "when": "!settings.usb" },
     { "id": "tcp", "when": "settings.tcp" },
     { "id": "no_tcp", "when": "!settings.tcp" }
-  ]
+  ],
+  "network": {
+    "rules": [
+      {
+        "chain": "input",
+        "in": "hotspot",
+        "proto": "tcp",
+        "ports": [5555],
+        "action": "accept",
+        "when": "settings.tcp"
+      }
+    ]
+  }
 }
