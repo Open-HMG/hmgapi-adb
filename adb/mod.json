@@ -1,7 +1,7 @@
 {
   "id": "adb",
   "name": "ADB",
-  "version": "1.0.0",
+  "version": "1.0.1-rc.1",
   "hmgapi": ">=1.0.0",
   "authors": ["VysseCodes"],
   "license": "AGPL-3.0",
