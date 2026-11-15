@@ -6,8 +6,12 @@ or off, applied right away.
 
 It replaces the Engineering Mode ADB TCP switch (`persist.service.adb.tcp.enable`). That
 switch gives `eth0` an address on the hotspot's subnet, so phones that join the hotspot
-get no address and wireless CarPlay and Android Auto fail. The mod holds the switch at
-0 and opens adb over the network with `persist.adb.tcp.port` instead.
+get no address and wireless CarPlay and Android Auto fail. The mod turns the switch off
+when it's applied and opens adb over the network with `persist.adb.tcp.port` instead.
+
+It doesn't watch the switch afterwards. Turned on again in Engineering Mode (or by
+NEMESIS's Enable ADB), it stays on, and wireless CarPlay and Android Auto fail again
+until the switch is turned off there or this mod is applied again with a setting changed. HMG-API doesn't warn about the switch while this mod is on.
 
 ## Settings
 
@@ -16,7 +20,9 @@ get no address and wireless CarPlay and Android Auto fail. The mod holds the swi
 | ADB over USB | on | the USB port in device mode for a computer (`persist.sys.usb.config=adb`). While it's on, the port takes no phones (wired CarPlay/Android Auto) or USB drives, a HMG-API rescue stick included. Off: `host,adb`, the stock host mode. |
 | ADB over Wi-Fi | off | `adb connect 192.168.0.1:5555` from a computer on the car's hotspot. Anyone on the hotspot can use it: this head unit's adb doesn't check keys. |
 
-Changes apply right away (adbd restarts). Removing the mod puts the stock values back.
+Changes apply right away (the Wi-Fi setting restarts adbd). Removing the mod puts the
+values back as they were before it, the Engineering Mode switch included: if that was on,
+it's on again.
 
 ## Cars
 
